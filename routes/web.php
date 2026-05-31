@@ -24,18 +24,26 @@ Route::middleware('guest')->group(function () {
 });
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::get('/search', [HomeController::class, 'search'])->name('search');
-Route::get('/artists', [ArtistController::class, 'index'])->name('artists.index');
-Route::get('/artists/{slug}', [ArtistController::class, 'show'])->name('artists.show');
-Route::get('/albums/{slug}', [AlbumController::class, 'show'])->name('albums.show');
-Route::get('/playlists', [PlaylistController::class, 'index'])->name('playlists.index');
-Route::get('/playlists/{slug}', [PlaylistController::class, 'show'])->name('playlists.show');
+// Locale switch (accessible to guests too)
 Route::get('/locale/{lang}', function($lang) {
     if (in_array($lang, ['en', 'fr', 'ar'])) {
         session(['locale' => $lang]);
     }
     return back();
 })->name('locale.switch');
+
+// Protected Frontend routes (must be logged in)
+Route::middleware('auth')->group(function () {
+    Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::get('/songs', [SongController::class, 'index'])->name('songs.index');
+    Route::get('/favorites', [SongController::class, 'favorites'])->name('songs.favorites');
+    Route::get('/search', [HomeController::class, 'search'])->name('search');
+    Route::get('/artists', [ArtistController::class, 'index'])->name('artists.index');
+    Route::get('/artists/{slug}', [ArtistController::class, 'show'])->name('artists.show');
+    Route::get('/albums/{slug}', [AlbumController::class, 'show'])->name('albums.show');
+    Route::get('/playlists', [PlaylistController::class, 'index'])->name('playlists.index');
+    Route::get('/playlists/{slug}', [PlaylistController::class, 'show'])->name('playlists.show');
+});
 
 // API routes for the player
 Route::prefix('api')->group(function () {
@@ -54,8 +62,8 @@ Route::prefix('api')->group(function () {
     Route::delete('/playlists/{playlist}/songs/{song}', [\App\Http\Controllers\PlaylistSongController::class, 'destroy']);
 });
 
-// Admin routes
-Route::prefix('admin')->name('admin.')->group(function () {
+// Admin routes (restricted to artists)
+Route::middleware(['auth', 'role:artist'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('artists', AdminArtistController::class);
     Route::resource('albums', AdminAlbumController::class);

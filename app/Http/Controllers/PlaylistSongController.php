@@ -35,7 +35,7 @@ class PlaylistSongController extends Controller
 
     public function userPlaylists()
     {
-        $user = User::first();
+        $user = auth()->user();
         if (!$user) return response()->json([]);
         return response()->json($user->playlists()->select('id', 'name')->get());
     }

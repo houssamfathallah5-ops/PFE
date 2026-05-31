@@ -24,7 +24,13 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect()->intended('/');
+            
+            $user = Auth::user();
+            if ($user->role === 'artist') {
+                return redirect()->route('admin.dashboard')->with('success', 'Bienvenue sur votre espace Artiste !');
+            }
+            
+            return redirect()->route('songs.index')->with('success', 'Bienvenue sur Melodix !');
         }
 
         return back()->withErrors(['email' => 'Identifiants incorrects.']);
@@ -41,18 +47,35 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|string|in:listener,artist',
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'is_admin' => false,
+            'role' => $request->role,
         ]);
+
+        if ($user->role === 'artist') {
+            \App\Models\Artist::create([
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'slug' => \Illuminate\Support\Str::slug($user->name) . '-' . $user->id,
+                'bio' => 'Nouveau chanteur sur Melodix.',
+                'monthly_listeners' => 0,
+                'total_streams' => 0,
+                'is_verified' => false,
+            ]);
+        }
 
         Auth::login($user);
 
-        return redirect('/');
+        if ($user->role === 'artist') {
+            return redirect()->route('admin.dashboard')->with('success', 'Votre compte Artiste a été créé !');
+        }
+
+        return redirect()->route('songs.index')->with('success', 'Votre compte Auditeur a été créé !');
     }
 
     public function logout(Request $request)

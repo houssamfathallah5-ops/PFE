@@ -12,47 +12,40 @@ class AdminArtistController extends Controller
 {
     public function index()
     {
-        $artists = Artist::withCount(['albums', 'songs'])
-            ->orderByDesc('monthly_listeners')
-            ->paginate(15);
-        return view('admin.artists.index', compact('artists'));
+        $artist = auth()->user()->artist;
+        if (!$artist) {
+            return redirect('/')->with('error', 'Profil artiste introuvable.');
+        }
+        return redirect()->route('admin.artists.edit', $artist);
     }
 
     public function create()
     {
-        return view('admin.artists.create');
+        abort(403, 'Action non autorisée.');
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'bio' => 'nullable|string',
-            'genre' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'image_url' => 'nullable|url',
-            'cover_url' => 'nullable|url',
-            'monthly_listeners' => 'nullable|integer|min:0',
-            'is_verified' => 'boolean',
-        ]);
-
-        DB::transaction(function () use ($data) {
-            Artist::create(array_merge($data, [
-                'slug' => Str::slug($data['name']) . '-' . Str::random(4),
-                'is_verified' => $data['is_verified'] ?? false,
-            ]));
-        });
-
-        return redirect()->route('admin.artists.index')->with('success', 'Artiste créé avec succès!');
+        abort(403, 'Action non autorisée.');
     }
 
     public function edit(Artist $artist)
     {
+        $userArtist = auth()->user()->artist;
+        if (!$userArtist || $artist->id !== $userArtist->id) {
+            abort(403, 'Action non autorisée.');
+        }
+
         return view('admin.artists.edit', compact('artist'));
     }
 
     public function update(Request $request, Artist $artist)
     {
+        $userArtist = auth()->user()->artist;
+        if (!$userArtist || $artist->id !== $userArtist->id) {
+            abort(403, 'Action non autorisée.');
+        }
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'bio' => 'nullable|string',
@@ -60,23 +53,18 @@ class AdminArtistController extends Controller
             'country' => 'nullable|string|max:100',
             'image_url' => 'nullable|url',
             'cover_url' => 'nullable|url',
-            'monthly_listeners' => 'nullable|integer|min:0',
-            'is_verified' => 'boolean',
         ]);
 
         DB::transaction(function () use ($artist, $data) {
-            $artist->update(array_merge($data, [
-                'is_verified' => $data['is_verified'] ?? false,
-            ]));
+            $artist->update($data);
         });
 
-        return redirect()->route('admin.artists.index')->with('success', 'Artiste mis à jour!');
+        return redirect()->route('admin.dashboard')->with('success', 'Votre profil artiste a été mis à jour!');
     }
 
     public function destroy(Artist $artist)
     {
-        DB::transaction(fn() => $artist->delete());
-        return redirect()->route('admin.artists.index')->with('success', 'Artiste supprimé.');
+        abort(403, 'Action non autorisée.');
     }
 
     public function show(Artist $artist)

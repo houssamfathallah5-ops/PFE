@@ -151,6 +151,9 @@
                 <a href="{{ route('search') }}" class="nav-link {{ request()->routeIs('search') ? 'active' : '' }}">
                     <i class="fas fa-search nav-icon"></i> {{ __('Search') }}
                 </a>
+                <a href="{{ route('songs.index') }}" class="nav-link {{ request()->routeIs('songs.index') ? 'active' : '' }}">
+                    <i class="fas fa-music nav-icon"></i> {{ __('All Songs') }}
+                </a>
                 <a href="{{ route('artists.index') }}" class="nav-link {{ request()->routeIs('artists.*') ? 'active' : '' }}">
                     <i class="fas fa-microphone nav-icon"></i> {{ __('Artists') }}
                 </a>
@@ -160,9 +163,9 @@
                 <a href="{{ route('playlists.index') }}" class="nav-link {{ request()->routeIs('playlists.*') ? 'active' : '' }}">
                     <i class="fas fa-list nav-icon"></i> {{ __('Playlists') }}
                 </a>
-                <div class="nav-link" onclick="alert('Connectez-vous pour voir vos titres aimés')">
+                <a href="{{ route('songs.favorites') }}" class="nav-link {{ request()->routeIs('songs.favorites') ? 'active' : '' }}">
                     <i class="fas fa-heart nav-icon"></i> {{ __('Liked Songs') }}
-                </div>
+                </a>
             </div>
             <div class="nav-section">
                 <div class="nav-label">{{ __('Account') }}</div>
@@ -185,6 +188,8 @@
                 </form>
                 @endguest
             </div>
+            @auth
+            @if(Auth::user()->role === 'artist')
             <div class="nav-section">
                 <div class="nav-label">{{ __('Administration') }}</div>
                 <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}">
@@ -197,6 +202,8 @@
                     <i class="fas fa-compact-disc nav-icon"></i> {{ __('Manage Albums') }}
                 </a>
             </div>
+            @endif
+            @endauth
         </nav>
     </aside>
 

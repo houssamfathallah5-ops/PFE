@@ -10,9 +10,8 @@ class LikeController extends Controller
 {
     public function toggle(int $id)
     {
-        // For demo purposes, we'll use the first user
-        $user = User::first();
-        if (!$user) return response()->json(['error' => 'No user found'], 404);
+        $user = auth()->user();
+        if (!$user) return response()->json(['error' => 'Veuillez vous connecter.'], 401);
 
         $song = Song::findOrFail($id);
         
@@ -37,7 +36,7 @@ class LikeController extends Controller
 
     public function check(int $id)
     {
-        $user = User::first();
+        $user = auth()->user();
         if (!$user) return response()->json(['liked' => false]);
 
         $isLiked = $user->likedSongs()->where('song_id', $id)->exists();

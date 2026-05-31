@@ -14,20 +14,33 @@ class AdminAlbumController extends Controller
 {
     public function index()
     {
-        $albums = Album::with('artist')->withCount('songs')->orderByDesc('release_date')->paginate(15);
+        $artist = auth()->user()->artist;
+        if (!$artist) {
+            return redirect('/')->with('error', 'Profil artiste introuvable.');
+        }
+
+        $albums = $artist->albums()->withCount('songs')->orderByDesc('release_date')->paginate(15);
         return view('admin.albums.index', compact('albums'));
     }
 
     public function create()
     {
-        $artists = Artist::orderBy('name')->get();
-        return view('admin.albums.create', compact('artists'));
+        $artist = auth()->user()->artist;
+        if (!$artist) {
+            return redirect('/')->with('error', 'Profil artiste introuvable.');
+        }
+
+        return view('admin.albums.create', compact('artist'));
     }
 
     public function store(Request $request)
     {
+        $artist = auth()->user()->artist;
+        if (!$artist) {
+            return redirect('/')->with('error', 'Profil artiste introuvable.');
+        }
+
         $data = $request->validate([
-            'artist_id' => 'required|exists:artists,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'cover_url' => 'nullable|url',
@@ -41,9 +54,9 @@ class AdminAlbumController extends Controller
             'songs.*.duration' => 'required|integer|min:1',
         ]);
 
-        DB::transaction(function () use ($data) {
+        DB::transaction(function () use ($data, $artist) {
             $album = Album::create([
-                'artist_id' => $data['artist_id'],
+                'artist_id' => $artist->id,
                 'title' => $data['title'],
                 'slug' => Str::slug($data['title']) . '-' . Str::random(4),
                 'description' => $data['description'] ?? null,
@@ -59,7 +72,7 @@ class AdminAlbumController extends Controller
                 foreach ($data['songs'] as $i => $songData) {
                     Song::create([
                         'album_id' => $album->id,
-                        'artist_id' => $data['artist_id'],
+                        'artist_id' => $artist->id,
                         'title' => $songData['title'],
                         'slug' => Str::slug($songData['title']) . '-' . $album->id . '-' . ($i + 1),
                         'duration' => $songData['duration'],
@@ -76,15 +89,23 @@ class AdminAlbumController extends Controller
 
     public function edit(Album $album)
     {
-        $artists = Artist::orderBy('name')->get();
+        $artist = auth()->user()->artist;
+        if (!$artist || $album->artist_id !== $artist->id) {
+            abort(403, 'Action non autorisée.');
+        }
+
         $album->load('songs');
-        return view('admin.albums.edit', compact('album', 'artists'));
+        return view('admin.albums.edit', compact('album', 'artist'));
     }
 
     public function update(Request $request, Album $album)
     {
+        $artist = auth()->user()->artist;
+        if (!$artist || $album->artist_id !== $artist->id) {
+            abort(403, 'Action non autorisée.');
+        }
+
         $data = $request->validate([
-            'artist_id' => 'required|exists:artists,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'cover_url' => 'nullable|url',
@@ -104,6 +125,11 @@ class AdminAlbumController extends Controller
 
     public function destroy(Album $album)
     {
+        $artist = auth()->user()->artist;
+        if (!$artist || $album->artist_id !== $artist->id) {
+            abort(403, 'Action non autorisée.');
+        }
+
         DB::transaction(fn() => $album->delete());
         return redirect()->route('admin.albums.index')->with('success', 'Album supprimé.');
     }

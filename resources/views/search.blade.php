@@ -3,6 +3,10 @@
 @section('content')
 <h1 style="font-size:28px;font-weight:800;margin-bottom:24px">Recherche</h1>
 
+@php
+    $query = request('q');
+@endphp
+
 @if(!$query)
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px">
     @foreach(['Pop','Hip-Hop','R&B','Electronic','Rock','Latin','Jazz','Classical'] as $genre)

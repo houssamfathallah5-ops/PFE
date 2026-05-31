@@ -11,7 +11,7 @@ class Artist extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'slug', 'bio', 'genre', 'country',
+        'user_id', 'name', 'slug', 'bio', 'genre', 'country',
         'image_url', 'cover_url', 'monthly_listeners',
         'total_streams', 'is_verified',
     ];
@@ -21,6 +21,11 @@ class Artist extends Model
         'monthly_listeners' => 'integer',
         'total_streams' => 'integer',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function albums(): HasMany
     {
